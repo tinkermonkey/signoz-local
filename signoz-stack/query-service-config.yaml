@@ -1,0 +1,4 @@
+auth:
+  enabled: false
+logLevel: info
+queryTimeout: 600

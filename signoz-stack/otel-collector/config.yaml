@@ -1,0 +1,85 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  
+  # Collect host metrics from the container
+  hostmetrics:
+    collection_interval: 60s
+    scrapers:
+      cpu: {}
+      disk: {}
+      filesystem: {}
+      load: {}
+      memory: {}
+      network: {}
+      paging: {}
+      processes: {}
+
+processors:
+  # Batch processor optimized for mixed workloads
+  # Lower batch size for CLI tools, timeout ensures delivery
+  batch:
+    send_batch_size: 100
+    timeout: 5s
+  
+  # Prevent excessive memory usage
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+  
+  # Add resource detection (hostname, OS info, etc)
+  resourcedetection:
+    detectors: [env, system]
+    timeout: 2s
+    system:
+      hostname_sources: [os]
+
+exporters:
+  # Export to self-hosted SigNoz (default)
+  otlp:
+    endpoint: "signoz-otel-collector:4317"
+    tls:
+      insecure: true
+  
+  # Uncomment below to export to SigNoz Cloud instead
+  # otlp_cloud:
+  #   endpoint: "${SIGNOZ_CLOUD_ENDPOINT}"
+  #   headers:
+  #     "signoz-ingestion-key": "${SIGNOZ_INGESTION_KEY}"
+  #   tls:
+  #     insecure: false
+
+  # For debugging - logs all telemetry to console
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, pprof, zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resourcedetection]
+      exporters: [otlp, debug]
+    
+    metrics:
+      receivers: [otlp, hostmetrics]
+      processors: [memory_limiter, batch, resourcedetection]
+      exporters: [otlp]
+    
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resourcedetection]
+      exporters: [otlp]

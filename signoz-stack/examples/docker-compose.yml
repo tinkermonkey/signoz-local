@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # Python test application
+  python-app:
+    build: ./python-app
+    container_name: test-python-app
+    ports:
+      - "5000:5000"
+    networks:
+      - test-network
+      - signoz-network  # Connect to main SigNoz network
+    environment:
+      - PYTHONUNBUFFERED=1
+    labels:
+      app: "python-test-app"
+      platform: "test-platform"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # TypeScript test application
+  typescript-app:
+    build: ./typescript-app
+    container_name: test-typescript-app
+    ports:
+      - "3002:3000"
+    networks:
+      - test-network
+      - signoz-network  # Connect to main SigNoz network
+    environment:
+      - NODE_ENV=production
+    labels:
+      app: "typescript-test-app"
+      platform: "test-platform"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Fluent Bit log collector (disabled - apps send logs directly via OTLP)
+  # fluent-bit:
+  #   image: fluent/fluent-bit:2.2
+  #   container_name: test-fluent-bit
+  #   user: root
+  #   volumes:
+  #     - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+  #     - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #   networks:
+  #     - test-network
+  #   environment:
+  #     - SIGNOZ_HOST=localhost
+  #     - SIGNOZ_PORT=4318
+  #   depends_on:
+  #     - python-app
+  #     - typescript-app
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "3"
+
+  # Load generator to create test traffic
+  load-generator:
+    image: curlimages/curl:latest
+    container_name: test-load-generator
+    networks:
+      - test-network
+    depends_on:
+      - python-app
+      - typescript-app
+    command: >
+      sh -c "
+        echo 'Waiting for services to start...';
+        sleep 10;
+        echo 'Starting load generation...';
+        while true; do
+          echo 'Testing Python app...';
+          curl -s http://python-app:5000/ > /dev/null;
+          curl -s http://python-app:5000/hello/World > /dev/null;
+          curl -s http://python-app:5000/slow > /dev/null;
+          curl -s http://python-app:5000/error > /dev/null;
+          curl -s http://python-app:5000/process > /dev/null;
+          
+          echo 'Testing TypeScript app...';
+          curl -s http://typescript-app:3000/ > /dev/null;
+          curl -s http://typescript-app:3000/hello/Alice > /dev/null;
+          curl -s -X POST http://typescript-app:3000/calculate \
+            -H 'Content-Type: application/json' \
+            -d '{\"operation\":\"sum\",\"values\":[1,2,3,4,5]}' > /dev/null;
+          curl -s http://typescript-app:3000/chain > /dev/null;
+          curl -s http://typescript-app:3000/database > /dev/null;
+          
+          echo 'Load test cycle complete. Waiting 5 seconds...';
+          sleep 5;
+        done
+      "
+    restart: unless-stopped
+
+networks:
+  test-network:
+    name: signoz-test-network
+  signoz-network:
+    external: true
+    driver: bridge
