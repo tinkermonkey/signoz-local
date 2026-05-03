@@ -18,11 +18,11 @@ case $command in
     start)
         echo "🚀 Starting SigNoz + OTel Collector..."
         cd "$STACK_DIR"
-        docker-compose up -d
+        docker compose up -d
         echo ""
         echo "✅ Stack started. Waiting for services to be ready..."
         sleep 5
-        docker-compose ps
+        docker compose ps
         echo ""
         echo "📊 SigNoz UI: http://localhost:3301"
         echo "📡 OTel Collector (gRPC): localhost:4317"
@@ -32,40 +32,40 @@ case $command in
     stop)
         echo "🛑 Stopping SigNoz + OTel Collector..."
         cd "$STACK_DIR"
-        docker-compose down
+        docker compose down
         echo "✅ Stack stopped"
         ;;
     
     restart)
         echo "🔄 Restarting SigNoz + OTel Collector..."
         cd "$STACK_DIR"
-        docker-compose restart
+        docker compose restart
         sleep 3
-        docker-compose ps
+        docker compose ps
         ;;
     
     status)
         echo "📋 Stack Status:"
         cd "$STACK_DIR"
-        docker-compose ps
+        docker compose ps
         ;;
     
     logs)
         echo "📜 Stack Logs (press Ctrl+C to exit):"
         cd "$STACK_DIR"
-        docker-compose logs -f
+        docker compose logs -f
         ;;
     
     logs-otel)
         echo "�� OTel Collector Logs (press Ctrl+C to exit):"
         cd "$STACK_DIR"
-        docker-compose logs -f otel-collector
+        docker compose logs -f otel-collector
         ;;
     
     logs-signoz)
         echo "📜 SigNoz Backend Logs (press Ctrl+C to exit):"
         cd "$STACK_DIR"
-        docker-compose logs -f signoz-otel-collector query-service frontend
+        docker compose logs -f signoz-otel-collector query-service frontend
         ;;
     
     health)
@@ -96,7 +96,7 @@ case $command in
         echo ""
         echo "🔹 Full stack status:"
         cd "$STACK_DIR"
-        docker-compose ps
+        docker compose ps
         ;;
     
     test-telemetry)
@@ -120,7 +120,7 @@ case $command in
     clean)
         echo "�� Cleaning up (removing all containers and volumes)..."
         cd "$STACK_DIR"
-        docker-compose down -v
+        docker compose down -v
         echo "✅ Stack cleaned"
         ;;
     
