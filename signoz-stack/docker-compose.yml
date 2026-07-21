@@ -213,13 +213,13 @@ services:
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
-      - GOMEMLIMIT=400MiB
+      - GOMEMLIMIT=1536MiB
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 2G
         reservations:
-          memory: 128M
+          memory: 256M
     # Expose ports for direct application access
     ports:
       - "4317:4317"    # OTLP gRPC - primary ingestion port
