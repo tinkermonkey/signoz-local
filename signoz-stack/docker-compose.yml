@@ -34,13 +34,14 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 1G
         reservations:
           memory: 128M
     volumes:
       - zookeeper-1:/bitnami/zookeeper
     environment:
       - ZOO_SERVER_ID=1
+      - ZOO_HEAP_SIZE=512
       - ALLOW_ANONYMOUS_LOGIN=yes
       - ZOO_AUTOPURGE_INTERVAL=1
       - ZOO_ENABLE_PROMETHEUS_METRICS=yes
