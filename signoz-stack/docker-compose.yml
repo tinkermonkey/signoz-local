@@ -214,7 +214,7 @@ services:
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
-      - GOMEMLIMIT=1536MiB
+      - GOMEMLIMIT=3072MiB
     deploy:
       resources:
         limits:
